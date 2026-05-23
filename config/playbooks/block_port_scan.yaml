@@ -1,0 +1,31 @@
+name: block_port_scan_source
+description: Block IP address detected performing port scans
+trigger_rule_ids:
+  - DET-005
+  - DET-007
+  - PORT_SCAN
+  - RECONNAISSANCE
+min_severity: medium
+actions:
+  - type: enrich_ip
+    params:
+      providers: [abuseipdb, virustotal]
+    condition: "source_ip != ''"
+  - type: firewall_block
+    params:
+      chain: INPUT
+      comment: "Blocked by IncidentResponder - port scan"
+      expire_hours: 12
+      save: true
+    stop_on_failure: true
+  - type: webhook
+    params:
+      type: discord
+      message: "🔍 Port scan detected — {{alert.source_ip}} ({{alert.count}} events, {{alert.severity}})"
+    condition: "severity in ('High', 'Critical')"
+  - type: notify
+    params:
+      message: "Blocked {{alert.source_ip}} for port scan ({{alert.count}} events, {{alert.severity}} severity)"
+  - type: log_case
+    params:
+      summary: "Port scan from {{alert.source_ip}} - blocked"

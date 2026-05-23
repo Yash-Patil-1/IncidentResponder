@@ -1,0 +1,11 @@
+{
+  "rule_id": "DET-001",
+  "title": "SSH Brute Force Detected",
+  "severity": "High",
+  "source_ip": "192.168.1.100",
+  "description": "Multiple failed SSH login attempts detected from a single source IP",
+  "timestamp": "2024-01-15T10:30:00",
+  "count": 15,
+  "mitre_technique": "T1110 - Brute Force",
+  "recommendation": "Block the source IP and investigate potential compromise. Review auth.log for successful logins after the brute force."
+}

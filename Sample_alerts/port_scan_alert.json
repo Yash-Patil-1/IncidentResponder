@@ -1,0 +1,11 @@
+{
+  "rule_id": "DET-005",
+  "title": "Port Scan Detected",
+  "severity": "Medium",
+  "source_ip": "10.0.0.50",
+  "description": "Multiple connection attempts to different ports within a short time window",
+  "timestamp": "2024-01-15T11:45:00",
+  "count": 25,
+  "mitre_technique": "T1046 - Network Service Scanning",
+  "recommendation": "Investigate the source IP for further malicious activity. Consider blocking if repeated scans are observed."
+}

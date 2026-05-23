@@ -1,0 +1,491 @@
+Metadata-Version: 2.4
+Name: incident-responder
+Version: 1.0.0
+Summary: Automated incident response playbook engine for SOC operations
+Author-email: Yash Patil <yashpatil7714@gmail.com>
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: jinja2>=3.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+
+<div align="center">
+  <h1>🚨 Incident Responder</h1>
+  <p><strong>Automated IR Playbook Engine</strong></p>
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python" alt="Python version">
+    <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
+    <img src="https://img.shields.io/badge/Status-Beta-yellow?style=flat-square" alt="Status">
+    <img src="https://img.shields.io/badge/coverage-48%25-yellow?style=flat-square" alt="Coverage">
+    <img src="https://img.shields.io/badge/SOAR-Ready-red?style=flat-square" alt="SOAR">
+  </p>
+  <p><em>A SOAR-style CLI tool that executes YAML-defined response playbooks when security alerts fire — enrich IPs, block with iptables, log cases, and generate IR reports.</em></p>
+  <p>🔗 <strong>Pairs with <a href="https://github.com/YashPatil/LogSentinel">LogSentinel</a></strong> — Detect → Respond → Report</p>
+</div>
+
+---
+
+## 📋 Overview
+
+Incident Responder bridges the gap between **detection** and **response**. When a security alert fires (from LogSentinel or any SIEM), Incident Responder matches it against YAML-defined playbooks and executes automated response actions — enriching the IP via AbuseIPDB/VirusTotal, blocking it with iptables, sending file-based notifications, and logging everything to a SQLite database with full audit trail.
+
+**Why this project?** Automated incident response (SOAR) is one of the most sought-after skills in SOC roles. This project demonstrates practical ability to build playbook-driven automation, integrate threat intelligence APIs, interact with system firewalls, and maintain incident case management.
+
+### Portfolio Arc
+
+| Tool | Role | What It Does |
+|------|------|-------------|
+| **LogSentinel** | 🔍 Detect | Parse logs, detect threats, correlate alerts |
+| **Incident Responder** | 🚨 Respond | Enrich IPs, block attackers, notify, log cases |
+
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| **YAML Playbooks** | Define response workflows in simple YAML — triggers, actions, parameters |
+| **5 Action Types** | `firewall_block`, `enrich_ip`, `notify`, `webhook`, `log_case` — extensible architecture |
+| **Webhook Notifications** | Slack & Discord webhooks with env var or per-playbook URL override, template variables |
+| **IP Enrichment** | Query AbuseIPDB + VirusTotal APIs with automatic 1-hour caching |
+| **Firewall Blocking** | iptables IP blocking with dry-run mode (safe by default) + `--execute` flag |
+| **Wildcard Triggers** | `"*"` in `trigger_rule_ids` matches any alert rule — catch-all playbooks |
+| **Template Variables** | `{{alert.source_ip}}`, `{{alert.rule_id}}` — dynamic message/case templates |
+| **LogSentinel Integration** | Reads `{"alerts": [...]}` report format natively — pipe detection to response |
+| **SQLite Database** | Persistent incident tracking with full action audit trail |
+| **HTML Reports** | Dark-themed incident reports with severity badges and action timeline |
+| **JSON Export** | Structured incident data for SIEM integration and programmatic use |
+| **5 CLI Commands** | `run`, `list-playbooks`, `list-incidents`, `incident`, `stats` |
+| **3 Built-in Playbooks** | SSH brute force block, port scan block, catch-all high severity notification |
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/YashPatil/IncidentResponder.git
+cd IncidentResponder
+
+# Create a virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install Incident Responder
+pip install -e .
+```
+
+### Basic Usage
+
+```bash
+# Run with a sample alert
+incident-responder run Sample_alerts/ssh_brute_alert.json
+
+# List available playbooks
+incident-responder list-playbooks
+
+# List tracked incidents
+incident-responder list-incidents
+
+# View incident details
+incident-responder incident 1
+```
+
+### With LogSentinel Integration
+
+```bash
+# Generate a LogSentinel report
+logsentinel --sample --format json
+
+# Pipe alerts directly into Incident Responder
+incident-responder run --from-logsentinel reports/logsentinel_report_*.json --verbose
+```
+
+### Execute Mode (requires sudo for iptables)
+
+```bash
+# Dry-run (default) — shows what would happen
+incident-responder run Sample_alerts/ssh_brute_alert.json
+
+# Execute mode — actually blocks the IP
+incident-responder run Sample_alerts/ssh_brute_alert.json --execute
+```
+
+### Example Output
+
+```
+$ incident-responder run Sample_alerts/ssh_brute_alert.json --verbose
+
+[+] Alert: [High] SSH Brute Force Detected (DET-001)
+[+] Source IP: 192.168.1.100
+[+] Mode: DRY-RUN
+
+[+] Matching playbooks: block_ssh_brute_force, notify_high_severity_alert
+
+============================================================
+  Incident #1: SSH Brute Force Detected
+============================================================
+  Playbook: block_ssh_brute_force
+  Status:   open
+  Alert:    [High] DET-001 - 192.168.1.100
+============================================================
+
+  Step 1: [✓] enrich_ip
+           No enrichment providers configured (set ABUSEIPDB_API_KEY, VIRUSTOTAL_API_KEY)
+
+  Step 2: [✓] firewall_block
+           [DRY-RUN] Would block 192.168.1.100 via iptables chain INPUT (Blocked by IncidentResponder - SSH brute force)
+
+  Step 3: [✓] notify
+           Notification written to /home/user/.incident_responder/notifications.log
+
+  Step 4: [✓] log_case
+           Case logged: SSH brute force from 192.168.1.100 - blocked via iptables
+
+  Step 5: [✓] enrich_ip
+           No enrichment providers configured (set ABUSEIPDB_API_KEY, VIRUSTOTAL_API_KEY)
+
+  Step 6: [✓] notify
+           Notification written to /home/user/.incident_responder/notifications.log
+
+  Step 7: [✓] log_case
+           Case logged: High severity alert DET-001 from 192.168.1.100 - investigation needed
+
+[+] HTML report: reports/ir_incident_1_20260523_113948.html
+```
+
+---
+
+## 📖 Playbook Format
+
+Playbooks are YAML files stored in `config/playbooks/`. Each playbook defines trigger conditions and a sequence of automated actions.
+
+```yaml
+name: block_ssh_brute_force
+description: Block IP address detected performing SSH brute force attacks
+trigger_rule_ids:
+  - DET-001
+  - SSH_BRUTE_FORCE
+min_severity: medium
+actions:
+  - type: enrich_ip
+    params:
+      providers: [abuseipdb, virustotal]
+  - type: firewall_block
+    params:
+      chain: INPUT
+      comment: "Blocked by IncidentResponder - SSH brute force"
+  - type: notify
+    params:
+      message: "Blocked {{alert.source_ip}} for SSH brute force ({{alert.count}} attempts)"
+  - type: log_case
+    params:
+      summary: "SSH brute force from {{alert.source_ip}} - blocked via iptables"
+```
+
+### Trigger Rules
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `trigger_rule_ids` | Alert rule IDs that activate this playbook | `["DET-001", "SSH_BRUTE_FORCE"]` |
+| `min_severity` | Minimum alert severity required | `low`, `medium`, `high`, `critical` |
+| Wildcard `"*"` | Match any rule ID | `["*"]` — use with `min_severity: high` for catch-all |
+
+### Action Types
+
+| Action | Description | Key Params |
+|--------|-------------|------------|
+| `firewall_block` | Block IP via iptables (dry-run by default) | `ip`, `chain`, `comment` |
+| `webhook` | Send Slack / Discord notification via webhook | `type` (slack/discord), `message`, `url` (optional override) |
+| `enrich_ip` | Query AbuseIPDB + VirusTotal for IP reputation | `ip`, `providers` |
+| `notify` | Write structured notification to JSONL log file | `message`, `channel` |
+| `log_case` | Record case summary in SQLite database | `summary` |
+
+### Template Variables
+
+All action params support `{{alert.field}}` substitution:
+
+| Variable | Source | Example |
+|----------|--------|---------|
+| `{{alert.rule_id}}` | Alert rule ID | `DET-001` |
+| `{{alert.title}}` | Alert title | `SSH Brute Force Detected` |
+| `{{alert.severity}}` | Severity level | `High` |
+| `{{alert.source_ip}}` | Attacker IP | `192.168.1.100` |
+| `{{alert.count}}` | Event count | `15` |
+| `{{alert.mitre_technique}}` | MITRE ATT&CK ID | `T1110 - Brute Force` |
+
+---
+
+## 🛠️ CLI Reference
+
+```
+usage: incident-responder [-h] [--version] {run,list-playbooks,list-incidents,incident,stats} ...
+```
+
+### Commands
+
+#### `run` — Execute playbooks for an alert
+
+```
+incident-responder run [alert_file] [options]
+
+Positional Arguments:
+  alert_file                Path to alert JSON file (optional — interactive mode if omitted)
+
+Options:
+  --from-logsentinel PATH   Load alert from LogSentinel report JSON
+  --execute                 Actually execute actions (default: dry-run)
+  --verbose, -v             Show detailed progress
+  --output-dir, -o DIR      Report output directory (default: ./reports)
+  --format, -f {html,json}  Report format (default: html)
+  --playbooks-dir PATH      Path to custom playbooks directory
+```
+
+#### `list-playbooks` — Show all loaded playbooks
+
+```
+incident-responder list-playbooks [--playbooks-dir PATH]
+```
+
+#### `list-incidents` — Show tracked incidents
+
+```
+incident-responder list-incidents [--status {open,closed}]
+```
+
+#### `incident` — View or manage an incident
+
+```
+incident-responder incident <id> [close]
+```
+
+#### `stats` — Show database statistics
+
+```
+incident-responder stats
+```
+
+### Usage Examples
+
+```bash
+# Run with a standalone alert JSON
+incident-responder run Sample_alerts/ssh_brute_alert.json
+
+# Run from a LogSentinel report
+incident-responder run --from-logsentinel logsentinel_report.json -v
+
+# Execute mode (actually blocks the IP)
+sudo incident-responder run alert.json --execute
+
+# View incident details
+incident-responder incident 1
+
+# Close an incident after investigation
+incident-responder incident 1 close
+
+# Generate JSON report instead of HTML
+incident-responder run alert.json --format json
+
+# Use custom playbooks
+incident-responder run alert.json --playbooks-dir ./my-playbooks
+
+# Show database stats
+incident-responder stats
+
+# Check version
+incident-responder --version
+```
+
+---
+
+## 📁 Project Structure
+
+```
+IncidentResponder/
+├── pyproject.toml              # Package configuration (console_scripts entry)
+├── requirements.txt            # Python dependencies
+├── README.md                   # This file
+├── PRD.md                      # Product requirements document
+│
+├── src/
+│   ├── __init__.py             # Package init (version: 1.0.0)
+│   ├── models.py               # Alert, Playbook, ActionResult, Incident dataclasses
+│   ├── engine.py               # PlaybookEngine — loader, matcher, executor
+│   ├── database.py             # SQLite database (WAL mode, incidents + actions tables)
+│   ├── main.py                 # CLI entry point (5 commands)
+│   ├── reporter.py             # IncidentReporter — HTML and JSON reports
+│   ├── actions/
+│   │   ├── __init__.py         # ActionRegistry — maps types to handlers
+│   │   ├── firewall.py         # iptables block (dry-run / execute)
+│   │   ├── enrich.py           # AbuseIPDB + VirusTotal with 1-hour cache
+│   │   ├── webhook.py          # Slack & Discord webhook notifications
+│   │   ├── notify.py           # File-based JSONL notifications
+│   │   └── log_case.py         # Case logging to SQLite
+│   ├── utils.py                # Shared template rendering utility
+│   └── templates/
+│       └── report.html         # Jinja2 HTML report template
+│
+├── config/
+│   └── playbooks/
+│       ├── block_ssh_brute.yaml    # SSH brute force → enrich + block + notify
+│       ├── block_port_scan.yaml    # Port scan → enrich + block + notify
+│       └── notify_high_alert.yaml  # Catch-all high+ severity → enrich + notify
+│
+├── Sample_alerts/
+│   ├── ssh_brute_alert.json    # DET-001: SSH brute force (LogSentinel-compatible)
+│   └── port_scan_alert.json    # DET-005: Port scan (standalone format)
+│
+├── tests/
+│   ├── test_engine.py          # 13 tests — playbook matching, execution, persistence
+│   ├── test_actions.py         # 12 tests — firewall, notify, log_case, registry
+│   └── test_database.py        # 12 tests — CRUD, filtering, stats, edge cases
+│
+├── reports/                    # Generated incident reports
+└── venv/                       # Virtual environment (local)
+```
+
+---
+
+## 🔧 API & Webhook Configuration
+
+### Threat Intel APIs (Enrichment)
+To enable IP enrichment, set the following environment variables:
+
+```bash
+# AbuseIPDB (free tier: 1,000 checks/day)
+export ABUSEIPDB_API_KEY="your_key_here"
+
+# VirusTotal (free tier: 500 requests/day)
+export VIRUSTOTAL_API_KEY="your_key_here"
+```
+
+Without API keys, enrichment steps will skip gracefully with a clear message.
+
+### Webhook URLs (Notifications)
+To enable Slack and Discord notifications, set the following environment variables:
+
+```bash
+# Slack incoming webhook
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/T00/B00/xxxxx"
+
+# Discord webhook
+export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123456/abcdef"
+```
+
+Each playbook can also specify a custom webhook URL in its action params (overrides the env var).
+Without these variables, webhook steps will skip gracefully with a clear message.
+
+---
+
+## 🧪 Running Tests
+
+```bash
+# Install with dev dependencies
+pip install -e ".[dev]"
+
+# Run all tests
+python -m pytest tests/ -v
+
+# Run with coverage
+python -m pytest tests/ --cov=src --cov-report=term
+```
+
+**Current test results: 42/42 passing** (48% module coverage — network-dependent and CLI code excluded from unit tests)
+
+---
+
+## 🔌 LogSentinel Integration
+
+Incident Responder is designed to pair seamlessly with [LogSentinel](https://github.com/YashPatil/LogSentinel):
+
+```bash
+# Step 1: Detect with LogSentinel
+logsentinel sample_logs/auth.log --format json --verbose
+
+# Step 2: Respond with Incident Responder
+incident-responder run --from-logsentinel reports/logsentinel_report_*.json --verbose
+```
+
+The `--from-logsentinel` flag automatically parses LogSentinel's `{"alerts": [...]}` report format.
+
+---
+
+## 🗺️ Architecture
+
+```
+                    ┌──────────────┐
+                    │  Alert JSON  │
+                    │ (standalone  │
+                    │  or LS fmt)  │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │ Playbook     │
+                    │ Engine       │
+                    │              │
+                    │ 1. Load      │
+                    │    playbooks │
+                    │ 2. Match     │
+                    │    alert     │
+                    │ 3. Create    │
+                    │    incident  │
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┬───────────┐
+              │            │            │           │
+       ┌──────▼───┐ ┌─────▼────┐ ┌─────▼────┐ ┌────▼──────┐
+       │ Firewall │ │ Enrich   │ │ Webhook  │ │ Notify    │
+       │ Block    │ │ IP (VT + │ │ (Slack / │ │ (File     │
+       │ (iptables│ │ AbuseDB) │ │ Discord) │ │  JSONL)   │
+       └──────┬───┘ └─────┬────┘ └─────┬────┘ └─────┬─────┘
+              │            │            │            │
+              └────────────┼────────────┼────────────┘
+                           │
+                    ┌──────▼───────┐
+                    │  SQLite DB   │
+                    │  (Incidents  │
+                    │   + Actions) │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │   Reporter   │
+                    │  HTML / JSON │
+                    └──────────────┘
+```
+
+### Data Flow
+
+1. **Ingest** — Alert arrives via JSON file, LogSentinel report, or manual input
+2. **Match** — PlaybookEngine compares alert against loaded playbooks (`trigger_rule_ids` + `min_severity`)
+3. **Incident** — New incident record created in SQLite database
+4. **Execute** — Each matching playbook's actions run in sequence
+5. **Log** — Every action result recorded in database with full audit trail
+6. **Report** — HTML or JSON report generated for human review or SIEM ingestion
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👨‍💻 Author
+
+**Yash Patil** — Cybersecurity Analyst | SOC Operations & Incident Response
+- 📧 yashpatil7714@gmail.com
+- 🔗 [LinkedIn](https://www.linkedin.com/in/yash-patil-cyber/)
+- 🐙 [GitHub](https://github.com/YashPatil)
+
+---
+
+<div align="center">
+  <sub>Built with Python, PyYAML, SQLite, and a deep appreciation for automated defense.</sub>
+  <br>
+  <sub>Part of the <strong>Detect → Respond → Hunt</strong> SOC tool portfolio.</sub>
+</div>

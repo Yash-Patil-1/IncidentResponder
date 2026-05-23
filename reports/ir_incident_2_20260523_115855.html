@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident #2 - IR Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #f0f6fc; font-size: 1.8rem; margin-bottom: 0.5rem; }
+        h2 { color: #f0f6fc; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+        .header { border-bottom: 1px solid #30363d; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 2em; font-size: 0.8rem; font-weight: 600; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 1.25rem; margin-bottom: 1rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; }
+        .grid .label { color: #8b949e; font-size: 0.85rem; }
+        .grid .value { color: #c9d1d9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th { text-align: left; padding: 0.5rem; border-bottom: 2px solid #30363d; color: #8b949e; font-size: 0.85rem; }
+        td { padding: 0.5rem; border-bottom: 1px solid #21262d; font-size: 0.9rem; }
+        code { background: #1c2128; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
+        .status-success { color: #3fb950; }
+        .status-failure { color: #f85149; }
+        .status-skipped { color: #d29922; }
+        .status-pending { color: #8b949e; }
+        .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #30363d; color: #8b949e; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Incident #2</h1>
+            <p style="color: #8b949e;">block_ssh_brute_force</p>
+        </div>
+
+        <div class="card">
+            <h2>Alert Summary</h2>
+            <p style="margin: 0.75rem 0;">
+                <span class="badge" style="background: #fd7e14; color: #000;">High</span>
+                <strong>SSH Brute Force Detected</strong> <code>DET-001</code>
+            </p>
+            <div class="grid">
+                <div><span class="label">Source IP</span><div class="value">192.168.1.100</div></div>
+                <div><span class="label">Status</span><div class="value">open</div></div>
+                <div><span class="label">Events</span><div class="value">15</div></div>
+                <div><span class="label">MITRE</span><div class="value">T1110 - Brute Force</div></div>
+                <div><span class="label">Created</span><div class="value">2026-05-23T11:58:54</div></div>
+                <div><span class="label">Resolved</span><div class="value">—</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Actions Taken</h2>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Action</th><th>Status</th><th>Message</th></tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td>1</td>
+                <td><code>enrich_ip</code></td>
+                <td><span class="status-skipped">⏭ skipped</span></td>
+                <td>No enrichment providers configured (set ABUSEIPDB_API_KEY, VIRUSTOTAL_API_KEY)</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><code>firewall_block</code></td>
+                <td><span class="status-success">✅ success</span></td>
+                <td>[DRY-RUN] Would block 192.168.1.100 via iptables chain INPUT (Blocked by IncidentResponder - SSH brute force)
+           [DRY-RUN] Would auto-remove after 24h
+           [DRY-RUN] Would save iptables rules for persistence</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><code>webhook</code></td>
+                <td><span class="status-skipped">⏭ skipped</span></td>
+                <td>SLACK_WEBHOOK_URL not set (set env var or pass 'url' in params)</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><code>notify</code></td>
+                <td><span class="status-success">✅ success</span></td>
+                <td>Notification written to /home/jack/.incident_responder/notifications.log</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><code>log_case</code></td>
+                <td><span class="status-success">✅ success</span></td>
+                <td>Case logged: SSH brute force from 192.168.1.100 - blocked via iptables</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td><code>enrich_ip</code></td>
+                <td><span class="status-skipped">⏭ skipped</span></td>
+                <td>No enrichment providers configured (set ABUSEIPDB_API_KEY, VIRUSTOTAL_API_KEY)</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td><code>webhook</code></td>
+                <td><span class="status-skipped">⏭ skipped</span></td>
+                <td>Condition not met: severity == 'Critical'</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td><code>webhook</code></td>
+                <td><span class="status-skipped">⏭ skipped</span></td>
+                <td>DISCORD_WEBHOOK_URL not set (set env var or pass 'url' in params)</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td><code>notify</code></td>
+                <td><span class="status-success">✅ success</span></td>
+                <td>Notification written to /home/jack/.incident_responder/notifications.log</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td><code>log_case</code></td>
+                <td><span class="status-success">✅ success</span></td>
+                <td>Case logged: High severity alert DET-001 from 192.168.1.100 - investigation needed</td>
+            </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>Generated by Incident Responder v1.0.0 at 2026-05-23 11:58:55</p>
+        </div>
+    </div>
+</body>
+</html>

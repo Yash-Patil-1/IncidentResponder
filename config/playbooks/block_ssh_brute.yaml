@@ -1,0 +1,30 @@
+name: block_ssh_brute_force
+description: Block IP address detected performing SSH brute force attacks
+trigger_rule_ids:
+  - DET-001
+  - SSH_BRUTE_FORCE
+  - AUTH_BRUTE_FORCE
+min_severity: medium
+actions:
+  - type: enrich_ip
+    params:
+      providers: [abuseipdb, virustotal]
+    stop_on_failure: false
+  - type: firewall_block
+    params:
+      chain: INPUT
+      comment: "Blocked by IncidentResponder - SSH brute force"
+      expire_hours: 24
+      save: true
+    stop_on_failure: true
+  - type: webhook
+    params:
+      type: slack
+      message: "🚨 SSH Brute Force blocked — {{alert.source_ip}} ({{alert.count}} attempts, {{alert.severity}})"
+    condition: "count >= 5"
+  - type: notify
+    params:
+      message: "Blocked {{alert.source_ip}} for SSH brute force ({{alert.count}} attempts, {{alert.severity}} severity)"
+  - type: log_case
+    params:
+      summary: "SSH brute force from {{alert.source_ip}} - blocked via iptables"

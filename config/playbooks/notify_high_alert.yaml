@@ -1,0 +1,25 @@
+name: notify_high_severity_alert
+description: Log and notify on any high or critical severity alert
+trigger_rule_ids:
+  - "*"
+min_severity: high
+actions:
+  - type: enrich_ip
+    params:
+      providers: [abuseipdb]
+    condition: "source_ip != ''"
+  - type: webhook
+    params:
+      type: slack
+      message: "🚨 [{{alert.severity}}] {{alert.rule_id}}: {{alert.title}} from {{alert.source_ip}}"
+    condition: "severity == 'Critical'"
+  - type: webhook
+    params:
+      type: discord
+      message: "🚨 [{{alert.severity}}] {{alert.rule_id}}: {{alert.title}} from {{alert.source_ip}}"
+  - type: notify
+    params:
+      message: "[HIGH] {{alert.severity}} alert {{alert.rule_id}}: {{alert.title}} from {{alert.source_ip}}"
+  - type: log_case
+    params:
+      summary: "High severity alert {{alert.rule_id}} from {{alert.source_ip}} - investigation needed"
