@@ -9,7 +9,7 @@
     <img src="https://img.shields.io/badge/SOAR-Ready-red?style=flat-square" alt="SOAR">
   </p>
   <p><em>A SOAR-style CLI tool that executes YAML-defined response playbooks when security alerts fire — enrich IPs, block with iptables, log cases, and generate IR reports.</em></p>
-  <p>🔗 <strong>Pairs with <a href="https://github.com/YashPatil/LogSentinel">LogSentinel</a></strong> — Detect → Respond → Report</p>
+  <p>🔗 <strong>Pairs with <a href="https://github.com/Yash-Patil-1/LogSentinel">LogSentinel</a></strong> — Detect → Respond → Report</p>
 </div>
 
 ---
@@ -55,7 +55,7 @@ Incident Responder bridges the gap between **detection** and **response**. When 
 
 ```bash
 # Clone the repository
-git clone https://github.com/YashPatil/IncidentResponder.git
+git clone https://github.com/Yash-Patil-1/IncidentResponder.git
 cd IncidentResponder
 
 # Create a virtual environment (recommended)
@@ -387,7 +387,7 @@ python -m pytest tests/ --cov=src --cov-report=term
 
 ## 🔌 LogSentinel Integration
 
-Incident Responder is designed to pair seamlessly with [LogSentinel](https://github.com/YashPatil/LogSentinel):
+Incident Responder is designed to pair seamlessly with [LogSentinel](https://github.com/Yash-Patil-1/LogSentinel):
 
 ```bash
 # Step 1: Detect with LogSentinel
