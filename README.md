@@ -5,7 +5,7 @@
     <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python" alt="Python version">
     <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
     <img src="https://img.shields.io/badge/Status-Beta-yellow?style=flat-square" alt="Status">
-    <img src="https://img.shields.io/badge/coverage-48%25-yellow?style=flat-square" alt="Coverage">
+    <img src="https://img.shields.io/badge/coverage-46%25-yellow?style=flat-square" alt="Coverage">
     <img src="https://img.shields.io/badge/SOAR-Ready-red?style=flat-square" alt="SOAR">
   </p>
   <p><em>A SOAR-style CLI tool that executes YAML-defined response playbooks when security alerts fire — enrich IPs, block with iptables, log cases, and generate IR reports.</em></p>
@@ -381,7 +381,7 @@ python -m pytest tests/ -v
 python -m pytest tests/ --cov=src --cov-report=term
 ```
 
-**Current test results: 42/42 passing** (48% module coverage — network-dependent and CLI code excluded from unit tests)
+**Current test results: 56/56 passing** (46% module coverage — network-dependent and CLI code excluded from unit tests)
 
 ---
 

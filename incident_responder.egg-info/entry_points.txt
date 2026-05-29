@@ -1,2 +1,0 @@
-[console_scripts]
-incident-responder = src.main:main
